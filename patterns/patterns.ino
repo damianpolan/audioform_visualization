@@ -1,7 +1,8 @@
 #include "FastLED.h"
 #include "mixer.h"
 #include "matrix.h"
-
+#include "point.h"
+#include "shapes.h"
 // How many leds in your strip?
 #define NUM_LEDS 74
 
