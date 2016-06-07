@@ -1,0 +1,46 @@
+
+Shapes:
+- line
+- oval 
+- rectangle
+	-> fill
+
+Local Effects:
+- i.e: position fade
+
+Triggers:
+- Switch/add patterns only at certain set trigger?
+- other triggers
+
+Fading Methods:
+- Transparency fade
+- position intesity interpolation?
+
+
+Multi Channel Combinations.
+
+Combination types:
+- Add
+- Subtract
+- Multiply 
+- Divide
+- Difference
+
+Effects (apply on a pattern):
+- ie. blur
+
+void make_lines() {
+	
+}
+
+CRGB matrix[10][10];
+
+void update() {
+	clear(matrix)
+	mixer.add(matrix, falling_lines(amount, speed, length, add))
+	add_blur(matrix, amount)
+	rotate(matrix, degrees)
+	set_color(255, 0, 0)
+	set_hue(255)
+	mirror(horizontal, left_side, middle)
+}
