@@ -21,8 +21,17 @@ CRGB Matrix::get(uint16_t x, uint16_t y) {
 }
 
 CRGB Matrix::set(uint16_t x, uint16_t y, CRGB color) {
-	if (x >= 0 && x < this->width
-		&& y >= 0 && y < this-> height) {
+	if (Tools::in_bounds(x, y, this->width, this->height)) {
 		return this->matrix2D[y][x];
 	}
+}
+
+Matrix* Matrix::copy() {
+	Matrix* new_one = new Matrix(this->width, this->height);
+	for (uint16_t y = 0; y < this->height; y++) {
+		for (uint16_t x = 0; x < this->width; x++) {
+			new_one->set(x, y, this->matrix2D[y][x]);
+		}
+	}
+	return new_one;
 }

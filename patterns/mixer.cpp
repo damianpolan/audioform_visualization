@@ -9,6 +9,24 @@ void Mixer::add(Matrix* target, Matrix* sourceA, Matrix* sourceB) {
 	}
 }
 
+void Mixer::add_weighted(Matrix* target, Matrix* sourceA, Matrix* sourceB, float sourceA_weight, float sourceB_weight) {
+	for (uint16_t y = 0; y < target->height; y++) {
+		for (uint16_t x = 0; x < target->width; x++) {
+			CRGB targA = sourceA->get(x, y);
+			targA[0] *= sourceA_weight;
+			targA[1] *= sourceA_weight;
+			targA[2] *= sourceA_weight;
+			
+			CRGB targB = sourceB->get(x, y);
+			targB[0] *= sourceB_weight;
+			targB[1] *= sourceB_weight;
+			targB[2] *= sourceB_weight;
+
+			target->set(x, y, targA + targB);
+		}
+	}
+}
+
 void Mixer::subtract(Matrix* target, Matrix* sourceA, Matrix* sourceB) {
 	for (uint16_t y = 0; y < target->height; y++) {
 		for (uint16_t x = 0; x < target->width; x++) {
