@@ -5,12 +5,12 @@
 void Shapes::line(Matrix* target, Point p0, Point p1, CRGB color) {
 	 float deltax = p1.x - p0.x;
 	 if (deltax == 0) {
-	 	uint16_t diff = 1;
+	 	int32_t diff = 1;
 	 	if (p0.y > p1.y) {
 	 		diff = -1;
 	 	}	 	
 
-     	for (uint16_t y = p0.y; y < p1.y; y += diff) {
+     	for (int32_t y = p0.y; y < p1.y; y += diff) {
      		target->set(p0.x, y, color);
      	}
 	 	return;
@@ -18,9 +18,9 @@ void Shapes::line(Matrix* target, Point p0, Point p1, CRGB color) {
      float deltay = p1.y - p0.y;
      float error = -1.0;
      float deltaerr = abs(deltay / deltax);    // Assume deltax != 0 (line is not vertical)
-     uint16_t y = p0.y;
+     int32_t y = p0.y;
 
-     for (uint16_t x = p0.x; x < p1.x; x++) {
+     for (int32_t x = p0.x; x < p1.x; x++) {
      	target->set(x, y, color);
      	error = error + deltaerr;
      	if (error >= 0.0) {
@@ -31,10 +31,10 @@ void Shapes::line(Matrix* target, Point p0, Point p1, CRGB color) {
 }
 
 
-void Shapes::circle(Matrix* target, Point p0, uint16_t radius, CRGB color) {
-	uint16_t x = radius;
-    uint16_t y = 0;
-    uint16_t err = 0;
+void Shapes::circle(Matrix* target, Point p0, int32_t radius, CRGB color) {
+	int32_t x = radius;
+    int32_t y = 0;
+    int32_t err = 0;
 
     while (x >= y) {
         target->set(p0.x + x, p0.y + y, color);
@@ -65,7 +65,7 @@ void Shapes::rectangle(Matrix* target, Point p0, Point p2, CRGB color) {
 	Shapes::line(target, p3, p0, color);
 }
 
-void Shapes::rectangle(Matrix* target, Point p0, uint16_t width, uint16_t height, CRGB color) {
+void Shapes::rectangle(Matrix* target, Point p0, int32_t width, int32_t height, CRGB color) {
 	Point p2 = Point(p0.x + width, p0.y + height);
 	Shapes::rectangle(target, p0, p2, color);
 }
