@@ -6,7 +6,7 @@
 #include "tools.h"
 
 #define NUM_LEDS 74
-#define BRIGHTNESS 10
+#define BRIGHTNESS 5
 
 #define PIN_LEFT 9
 #define PIN_RIGHT 8
@@ -72,10 +72,16 @@ void copy_view_matrix() {
 	}
 }
 
-
+int y = 0;
 void update() {
 	Serial.print("Update\n\r");
-	view_matrix->set(16, 5, CRGB::Azure);
+	
+	view_matrix->clear(CRGB::Purple);
+	Shapes::line(view_matrix, Point(15, 3), Point(22, y), CRGB::Blue);
+	y++;
+	if (y > 8) {
+		y = 0;
+	}
 	Serial.print("copy_view_matrix\n\r");
 	copy_view_matrix();
 }
@@ -87,7 +93,7 @@ void draw() {
 void loop() {
 	update();
 	draw();
-	delay(500);
+	delay(100);
 }
 
 

@@ -13,6 +13,7 @@ class Matrix {
 		Matrix(int32_t width, int32_t height);
 		CRGB get(int32_t x, int32_t y);
 		void set(int32_t x, int32_t y, CRGB color);
+		void clear(CRGB color);
 		Matrix* copy();
 };
 

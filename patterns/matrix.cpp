@@ -37,6 +37,15 @@ void Matrix::set(int32_t x, int32_t y, CRGB color) {
 	}
 }
 
+
+void Matrix::clear(CRGB color) {
+	for (int32_t y = 0; y < this->height; y++) {
+		for (int32_t x = 0; x < this->width; x++) {
+			this->matrix2D[y][x] = color;
+		}
+	}
+}
+
 Matrix* Matrix::copy() {
 	Matrix* new_one = new Matrix(this->width, this->height);
 	for (int32_t y = 0; y < this->height; y++) {
