@@ -1,7 +1,7 @@
 #include "effects.h"
 
 
-void Effects::translate(Matrix* target, Matrix* sourceA, int32_t amount_x, int32_t amount_y) {
+void Effects::translate(Matrix* target, Matrix* sourceA, Point amount) {
 	Matrix* placeholder = target;
 	if (target == sourceA) {
 		placeholder = new Matrix(sourceA->width, sourceA->height);
@@ -9,7 +9,7 @@ void Effects::translate(Matrix* target, Matrix* sourceA, int32_t amount_x, int32
 
 	for (int32_t y = 0; y < sourceA->height; y++) {
 		for (int32_t x = 0; x < sourceA->width; x++) {
-			placeholder->set(x, y, sourceA->get(x - amount_x, y - amount_y));
+			placeholder->set(x, y, sourceA->get(x - amount.x, y - amount.y));
 		}
 	}
 
@@ -19,6 +19,7 @@ void Effects::translate(Matrix* target, Matrix* sourceA, int32_t amount_x, int32
 				target->set(x, y, placeholder->get(x, y));
 			}
 		}
+		delete placeholder;
 	}
 }
 
@@ -43,7 +44,7 @@ void Effects::blur(Matrix* target, Matrix* sourceA, int32_t dist[], int32_t dist
 	// define box filter matrix (degree 0 = no blur)
 	int32_t** box_filter;
 	const int32_t divider = 10000; //division required to take the final number back to normal scale
-
+	
 	box_filter = new int32_t*[dist_len];
 	for (int32_t y = 0; y < dist_len; y++) {
 		box_filter[y] = new int32_t[dist_len];
@@ -80,11 +81,16 @@ void Effects::blur(Matrix* target, Matrix* sourceA, int32_t dist[], int32_t dist
 	}
 
 
+	for (int32_t y = 0; y < dist_len; y++) {
+		delete box_filter[y];
+	}
+	delete box_filter;
 	if (target == sourceA) {
 		for (int32_t y = 0; y < placeholder->height; y++) {
 			for (int32_t x = 0; x < placeholder->width; x++) {
 				target->set(x, y, placeholder->get(x, y));
 			}
 		}
+		delete placeholder;
 	}
 }

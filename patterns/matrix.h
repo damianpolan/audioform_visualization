@@ -3,6 +3,7 @@
 
 #include "FastLED.h"
 #include "tools.h"
+#include "point.h"
 #include <vector>
 
 class Matrix {
@@ -15,6 +16,9 @@ class Matrix {
 		void set(int32_t x, int32_t y, CRGB color);
 		void clear(CRGB color);
 		Matrix* copy();
+    Matrix* half(Point subbox_p0, Point subbox_p1); 
+    // Creates a lower resolution matrix. Averaging the pixels down.
+    // the subbox is the rectangle to reduce from. 
 };
 
 #endif

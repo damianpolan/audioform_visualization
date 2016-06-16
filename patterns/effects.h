@@ -4,10 +4,11 @@
 #include "FastLED.h"
 #include "matrix.h"
 #include "tools.h"
+#include "point.h"
 
 class Effects {
   public:
-    static void translate(Matrix* target, Matrix* sourceA, int32_t amount_x, int32_t amount_y);
+    static void translate(Matrix* target, Matrix* sourceA, Point amount);
     static void rotate(Matrix* target, Matrix* sourceA, int32_t center_x, int32_t center_y, int32_t degrees);
     static void scale(Matrix* target, Matrix* sourceA, int32_t center_x, int32_t center_y, int32_t factor);
 

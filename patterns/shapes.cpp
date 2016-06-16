@@ -113,3 +113,8 @@ void Shapes::rectangle(Matrix* target, Point p0, int32_t width, int32_t height, 
 	Point p2 = Point(p0.x + width, p0.y + height);
 	Shapes::rectangle(target, p0, p2, color);
 }
+
+
+// void Shapes::poly(Matrix* target, Point p0, Point p1, Point p2, CRGB color) {
+
+// }
