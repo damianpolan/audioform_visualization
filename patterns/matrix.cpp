@@ -5,9 +5,24 @@ Matrix::Matrix(int32_t width, int32_t height) {
 	this->matrix2D.resize(height, std::vector<CRGB>(width, CRGB::Black));
 	this->width = width;
 	this->height = height;
+	this->pos_offset_x = 0;
+	this->pos_offset_y = 0;
+}
+
+Matrix::Matrix(int32_t width, int32_t height, Point pos_offset) {
+	// initializes the matrix to all black
+	this->matrix2D.resize(height, std::vector<CRGB>(width, CRGB::Black));
+	this->width = width;
+	this->height = height;
+	this->pos_offset_x = pos_offset.x;
+	this->pos_offset_y = pos_offset.y;
 }
 
 CRGB Matrix::get(int32_t x, int32_t y) {
+	return this->get_absolute(x + this->pos_offset_x, y + this->pos_offset_y);
+}
+
+CRGB Matrix::get_absolute(int32_t x, int32_t y) {
 	if (x >= 0 && x < this->width
 		&& y >= 0 && y < this->height) {
 		return this->matrix2D.at(y).at(x);
@@ -17,6 +32,8 @@ CRGB Matrix::get(int32_t x, int32_t y) {
 }
 
 void Matrix::set(int32_t x, int32_t y, CRGB color) {
+	x += this->pos_offset_x;
+	y += this->pos_offset_y;
 	if (Tools::in_bounds(x, y, this->width, this->height)) {
 		this->matrix2D[y][x] = color;
 	}
@@ -49,18 +66,7 @@ Matrix* Matrix::half(Point subbox_p0, Point subbox_p1) {
 
 			matrix_reduced->set(x, y, CRGB(red, green, blue));
 		}	
-	}	
-
- // for (int i = 0; i < height; ++i)
- //  {
- //      for (int j = 0; j < width; ++j)
- //      {
- //          Serial.print(this->get(i, j).r);
- //          Serial.print(" ");
- //      }
- //      Serial.print("\n\r");
- //  }
-
+	}
 	return matrix_reduced;
 }
 
@@ -73,7 +79,6 @@ Matrix* Matrix::copy() {
 	}
 	return new_one;
 }
-
 
 namespace std {
 	void __throw_bad_alloc()
