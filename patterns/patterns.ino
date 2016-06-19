@@ -12,13 +12,20 @@
 
 #define PIN_LEFT 6
 #define PIN_RIGHT 8
+#define PIN_BUTTON 11
+#define PIN_INDICATOR 13
 
+void set_led(int32_t x, int32_t y, CRGB color);
+void display_double_size_view_matrix(Matrix* view_m);
+void display_view_matrix(Matrix* view_m);
+void set_view_matrix(bool use_double);
+void button_interrupt();
 
 // LED CONFIGURATION
 int32_t config_grid_right_width = 11;
 int32_t config_grid_right_height = 8;
 int32_t config_grid_num_leds = 74;
-int32_t config_grid_gap = 2;
+int32_t config_grid_gap = 1;// must be odd
 int32_t config_grid_right[8][11] = {
 	{ -1, -1, 67, 68, 69, 70, 71, 72, 73, -1, -1 },
 	{ -1, 66, 65, 64, 63, 62, 61, 60, 59, 58, -1 },
@@ -31,110 +38,97 @@ int32_t config_grid_right[8][11] = {
 };
 
 int32_t FRAME_DELAY = 40;
-int32_t view_width;
-int32_t view_height;
+int32_t screen_width; // real dimensions of the LED screen.
+int32_t screen_height;
 CRGB leds_left[NUM_LEDS];
 CRGB leds_right[NUM_LEDS];
-Matrix* view_matrix;
+Matrix* view_matrix_screen;
+Matrix* view_matrix_double_res;
+bool use_double_view_matrix;
+Matrix* view_matrix; //the currently assigned view_matrix;
+
+//helper variables
+int32_t view_center_x = 0;
+int32_t view_center_y = 0;
+int32_t view_left;
+int32_t view_right;
+int32_t view_top;
+int32_t view_bottom;
+int32_t view_gap_size;
+int32_t view_pad_left_inner;
+int32_t view_pad_right_inner;
+int32_t counter = 0;
+int32_t blur_dist_5 [5] = { 10, 20, 50, 20, 10 };
+int32_t blur_dist_3_hard [3] = { 10, 80, 10 };
+int32_t blur_dist_3_soft [3] = { 20, 60, 20 };
+
 
 void setup() {
 	Serial.begin(9600);
-	Serial.print("Start\n\r");
-	FastLED.addLeds<NEOPIXEL, PIN_LEFT>(leds_left, NUM_LEDS);
-	FastLED.addLeds<NEOPIXEL, PIN_RIGHT>(leds_right, NUM_LEDS);
+
+	pinMode(PIN_INDICATOR, OUTPUT);
+  digitalWrite(PIN_INDICATOR, HIGH);
+
+  pinMode(PIN_BUTTON, INPUT);
+  attachInterrupt(digitalPinToInterrupt(PIN_BUTTON), button_interrupt, FALLING );
+
+	FastLED.addLeds<NEOPIXEL, PIN_LEFT>(leds_left, NUM_LEDS).setCorrection( TypicalLEDStrip );
+	FastLED.addLeds<NEOPIXEL, PIN_RIGHT>(leds_right, NUM_LEDS).setCorrection( TypicalLEDStrip );
 	FastLED.setBrightness(BRIGHTNESS);
 
-	view_width = (2 * config_grid_right_width) + config_grid_gap;
-	view_height = config_grid_right_height;
+	screen_width = (2 * config_grid_right_width) + config_grid_gap;
+	screen_height = config_grid_right_height;
 
 	// double size view matrix
-  view_matrix = new Matrix(view_width * 2, view_height * 2, Point(view_width, 0));
+  view_matrix_double_res = new Matrix(screen_width * 2, screen_height * 2, Point(screen_width, 0));
+  view_matrix_screen = new Matrix(screen_width, screen_height, Point(screen_width / 2, 0));
+
+  set_view_matrix(false);
 }
 
 
-void set_led(int32_t x, int32_t y, CRGB color) {
 
-	if (Tools::in_bounds(x, y, view_width, view_height)) {
-		if (x < config_grid_right_width) {
-			int32_t rel_x = config_grid_right_width - x;
-			int32_t pos = config_grid_right[y][rel_x];
-			if (pos > -1) leds_left[pos] = color;
-		}
-		else if (x >= config_grid_right_width + config_grid_gap) {
-			int32_t rel_x = x - (config_grid_right_width + config_grid_gap);
-			int32_t pos = config_grid_right[y][rel_x];
-			if (pos > -1) leds_right[pos] = color;
-		}
-	}
-}
-
-void copy_double_size_view_matrix() {
-	Matrix* halved = view_matrix->half(Point(0, 0), Point(view_matrix->width, view_matrix->height));
-
-	for (int32_t y = 0; y < halved->height; y++) {
-		for (int32_t x = 0; x < halved->width; x++) {
-			set_led(x, y, halved->get_absolute(x, y));
-		}
-	}
-
-	delete halved;
-}
-
-void copy_view_matrix() {
-	for (int32_t y = 0; y < view_matrix->height; y++) {
-		for (int32_t x = 0; x < view_matrix->width; x++) {
-			set_led(x, y, view_matrix->get_absolute(x, y));
-		}
-	}
-}
-
-
-//NOTES:
-//
-
-int y = 0;
-int y2 = 14;
-int32_t blur_dist[5] = { 10, 20, 50, 20, 10 };
+bool on = false;
 void update() {
-  // view_matrix->clear(CRGB(255, 0, 0));
-	// Shapes::rectangle(view_matrix, Point(15, 2), Point(21, 6), CRGB::Blue);
-  // Effects::translate(view_matrix, view_matrix, Point(0, y));
 
-	// Shapes::circle(view_matrix, Point(18, 4), 4, CRGB::Blue);
-  // Shapes::line(view_matrix, Point(30, 10), Point(48, 0), CRGB::Blue);
-  // Shapes::line(view_matrix, Point(30, 12), Point(48, 2), CRGB::Red);
-  // for (int32_t y = 0; y < view_width; y++) {
-  //   for (int32_t x = -view_width; x < 0; x++) {
-  //       view_matrix->set(x, y, CRGB::Blue);
-  //   }
+
+  set_view_matrix(false);
+  view_matrix->clear(CRGB(0, 100, 0));
+  Shapes::rectangle(view_matrix, Point(view_left, view_top), Point(view_right, view_bottom), CRGB::Green);
+  Shapes::rectangle(view_matrix, Point(view_pad_left_inner, view_top), Point(view_pad_right_inner, view_bottom), CRGB::Green);
+
+  // if (on) {
+  //   view_matrix->clear(CRGB(100, 0, 0));
+  //   Shapes::rectangle(view_matrix, Point(-5, 2), Point(5, 5), CRGB::Blue);    
   // }
 
-
-  Shapes::line(view_matrix, Point(-view_width, 0), Point(view_width, 0), CRGB::Blue);
-  Shapes::line(view_matrix, Point(-view_width, 1), Point(view_width, 1), CRGB::Blue);
-  Shapes::line(view_matrix, Point(-view_width, 2), Point(view_width, 2), CRGB::Blue);
-  // Shapes::line(view_matrix, Point(0, 1), Point(-10, 10), CRGB::Blue);
-
-  //
+  // set_view_matrix(true);
+  // FRAME_DELAY = 0;
   // view_matrix->clear(CRGB(50, 0, 50));
-  // Shapes::line(view_matrix, Point(0, 8), Point(48, y), CRGB::Blue);
-  // Shapes::line(view_matrix, Point(0, 8), Point(48, y2), CRGB::Blue);
-  // Effects::blur(view_matrix, view_matrix, blur_dist, 5);
-  y += 2;
-	y2 += 2;
-	if (y > 22) {
-		y = -6;
-	}
-  if (y2 > 22) {
-    y2 = -6;
-  }
+  // Shapes::line(view_matrix, Point(screen_width * 2, 8), Point(0, counter % 50 - 8), CRGB::Blue);
+  // Shapes::line(view_matrix, Point(screen_width * 2, 8 + 1), Point(0, counter % 50 - 8 + 1), CRGB::Blue);
 
+  // Shapes::line(view_matrix, Point(screen_width * 2, 8), Point(0, counter % 50 - 16), CRGB::Blue);
+  // Shapes::line(view_matrix, Point(screen_width * 2, 8 + 1), Point(0, counter % 50 - 16 + 1), CRGB::Blue);
+
+  // Shapes::line(view_matrix, Point(-screen_width * 2, 8), Point(0, counter % 50 - 8), CRGB::Blue);
+  // Shapes::line(view_matrix, Point(-screen_width * 2, 8 + 1), Point(0, counter % 50 - 8 + 1), CRGB::Blue);
+
+  // Shapes::line(view_matrix, Point(-screen_width * 2, 8), Point(0, counter % 50 - 16), CRGB::Blue);
+  // Shapes::line(view_matrix, Point(-screen_width * 2, 8 + 1), Point(0, counter % 50 - 16 + 1), CRGB::Blue);
+
+  // Effects::blur(view_matrix, view_matrix, blur_dist_5, 5);
 
 }
 
 void draw() {
-	copy_double_size_view_matrix();
+  if (use_double_view_matrix) 
+    display_double_size_view_matrix(view_matrix_double_res);
+  else 
+    display_view_matrix(view_matrix_screen);
+  
 	FastLED.show();
+  counter++;
 }
 
 void loop() {
@@ -145,4 +139,62 @@ void loop() {
 
 
 
+void button_interrupt(){
+  on = true;
+}
 
+void set_view_matrix(bool use_double) {
+  use_double_view_matrix = use_double;
+  if (use_double_view_matrix) {
+    view_matrix = view_matrix_double_res;
+    view_left = -screen_width;
+    view_right = screen_width - 1;
+    view_top = 0;
+    view_bottom = screen_height * 2 - 1;
+    view_gap_size = config_grid_gap * 2;
+    view_pad_left_inner = -config_grid_gap * 2;
+    view_pad_right_inner = config_grid_gap * 2;
+  } else {
+    view_matrix = view_matrix_screen;
+    view_left = -screen_width / 2;
+    view_right = screen_width / 2 - 1;
+    view_bottom = screen_height - 1;
+    view_gap_size = config_grid_gap;
+    view_pad_left_inner = -config_grid_gap;
+    view_pad_right_inner = config_grid_gap;
+  }
+}
+
+void set_led(int32_t x, int32_t y, CRGB color) {
+  //zero point (x = 0) is in the middle of the bra gap 
+  if (Tools::in_bounds(x, y, screen_width, screen_height)) {
+    if (x < config_grid_right_width) {
+      int32_t rel_x = config_grid_right_width - x - 1;
+      int32_t pos = config_grid_right[y][rel_x];
+      if (pos > -1) leds_left[pos] = color;
+    }
+    else if (x >= config_grid_right_width + config_grid_gap) {
+      int32_t rel_x = x - (config_grid_right_width + config_grid_gap);
+      int32_t pos = config_grid_right[y][rel_x];
+      if (pos > -1) leds_right[pos] = color;
+    }
+  }
+}
+
+void display_double_size_view_matrix(Matrix* view_m) {
+  Matrix* halved = view_m->half(Point(0, 0), Point(view_m->width, view_m->height));
+  for (int32_t y = 0; y < halved->height; y++) {
+    for (int32_t x = 0; x < halved->width; x++) {
+      set_led(x, y, halved->get_absolute(x, y));
+    }
+  }
+  delete halved;
+}
+
+void display_view_matrix(Matrix* view_m) {
+  for (int32_t y = 0; y < view_m->height; y++) {
+    for (int32_t x = 0; x < view_m->width; x++) {
+      set_led(x, y, view_m->get_absolute(x, y));
+    }
+  }
+}
