@@ -54,7 +54,7 @@ void Shapes::line(Matrix* target, Point p0, Point p1, CRGB color)
 	int32_t ystep = (p0.y < p1.y) ? 1 : -1;
 	int32_t y = p0.y;
 
-	for(int32_t x = p0.x; x < p1.x; x++)
+	for(int32_t x = p0.x; x <= p1.x; x++)
 	{
 		if(steep)
 		{

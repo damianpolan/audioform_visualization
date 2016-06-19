@@ -8,7 +8,7 @@
 #include "static_patterns.h"
 
 #define NUM_LEDS 74
-#define BRIGHTNESS 40
+#define BRIGHTNESS 100
 
 #define PIN_LEFT 6
 #define PIN_RIGHT 8
@@ -57,8 +57,10 @@ int32_t view_bottom;
 int32_t view_gap_size;
 int32_t view_pad_left_inner;
 int32_t view_pad_right_inner;
+int32_t view_width;
+int32_t view_height;
 int32_t counter = 0;
-int32_t blur_dist_5 [5] = { 10, 20, 50, 20, 10 };
+int32_t blur_dist_5 [5] = { 10, 20, 40, 20, 10 };
 int32_t blur_dist_3_hard [3] = { 10, 80, 10 };
 int32_t blur_dist_3_soft [3] = { 20, 60, 20 };
 
@@ -69,8 +71,8 @@ void setup() {
 	pinMode(PIN_INDICATOR, OUTPUT);
   digitalWrite(PIN_INDICATOR, HIGH);
 
-  pinMode(PIN_BUTTON, INPUT);
-  attachInterrupt(digitalPinToInterrupt(PIN_BUTTON), button_interrupt, FALLING );
+  // pinMode(PIN_BUTTON, INPUT);
+  // attachInterrupt(digitalPinToInterrupt(PIN_BUTTON), button_interrupt, FALLING );
 
 	FastLED.addLeds<NEOPIXEL, PIN_LEFT>(leds_left, NUM_LEDS).setCorrection( TypicalLEDStrip );
 	FastLED.addLeds<NEOPIXEL, PIN_RIGHT>(leds_right, NUM_LEDS).setCorrection( TypicalLEDStrip );
@@ -91,11 +93,48 @@ void setup() {
 bool on = false;
 void update() {
 
+  // view_matrix->clear(CRGB(0, 100, 0));
+  // Shapes::rectangle(view_matrix, Point(view_left, view_top), Point(view_right, view_bottom), CRGB::Green);
+  // Shapes::rectangle(view_matrix, Point(view_pad_left_inner, view_top), Point(view_pad_right_inner, view_bottom), CRGB::Green);
 
-  set_view_matrix(false);
-  view_matrix->clear(CRGB(0, 100, 0));
-  Shapes::rectangle(view_matrix, Point(view_left, view_top), Point(view_right, view_bottom), CRGB::Green);
-  Shapes::rectangle(view_matrix, Point(view_pad_left_inner, view_top), Point(view_pad_right_inner, view_bottom), CRGB::Green);
+
+  // FIFTY FIFTY
+  // StaticPatterns::fifty_fifty(view_matrix, CRGB::White, CRGB::Red);
+ //  // StaticPatterns::fifty_fifty(view_matrix, CRGB(25, 158, 216), CRGB(7, 113, 184));
+
+
+  // #############################################################
+  // BLURRED Horizontal LINE
+  // view_matrix->clear(CRGB(0, 100, 100));
+  // Shapes::line(view_matrix, Point(view_left, view_bottom / 2 + 1), Point(view_right, view_bottom / 2 + 1), CRGB::White);
+  // Shapes::line(view_matrix, Point(view_left, view_bottom / 2), Point(view_right + 1, view_bottom / 2), CRGB::White);
+  // Effects::blur(view_matrix, view_matrix, blur_dist_5, 5);
+
+  
+  // #############################################################
+  // BLURRED Vertical lines
+  // view_matrix->clear(CRGB(0, 100, 100));
+  // Shapes::line(view_matrix, Point(view_left + 4, view_top), Point(view_left + 4, view_bottom), CRGB::White);
+  // Shapes::line(view_matrix, Point(view_left + 5, view_top), Point(view_left + 5, view_bottom), CRGB::White);
+  // Shapes::line(view_matrix, Point(view_right - 4, view_top), Point(view_right - 4, view_bottom), CRGB::White);
+  // Shapes::line(view_matrix, Point(view_right - 5, view_top), Point(view_right - 5, view_bottom), CRGB::White);
+  // Effects::blur(view_matrix, view_matrix, blur_dist_5, 5);
+
+  // #############################################################
+  // CROSS lines
+  view_matrix->clear(CRGB(0, 100, 100));
+  Shapes::line(view_matrix, Point(view_left + 4, view_top), Point(view_left + 4, view_bottom), CRGB::White);
+  Shapes::line(view_matrix, Point(view_left + 5, view_top), Point(view_left + 5, view_bottom), CRGB::White);
+  Shapes::line(view_matrix, Point(view_right - 4, view_top), Point(view_right - 4, view_bottom), CRGB::White);
+  Shapes::line(view_matrix, Point(view_right - 5, view_top), Point(view_right - 5, view_bottom), CRGB::White);
+  Shapes::line(view_matrix, Point(view_left, view_bottom / 2 + 1), Point(view_right, view_bottom / 2 + 1), CRGB::White);
+  Shapes::line(view_matrix, Point(view_left, view_bottom / 2), Point(view_right + 1, view_bottom / 2), CRGB::White);
+  // Effects::blur(view_matrix, view_matrix, blur_dist_5, 5);
+
+
+
+  //light blue
+  // CRGB(25, 158, 216), CRGB(7, 113, 184)
 
   // if (on) {
   //   view_matrix->clear(CRGB(100, 0, 0));
@@ -154,14 +193,18 @@ void set_view_matrix(bool use_double) {
     view_gap_size = config_grid_gap * 2;
     view_pad_left_inner = -config_grid_gap * 2;
     view_pad_right_inner = config_grid_gap * 2;
+    view_width = view_matrix_double_res->width;
+    view_height = view_matrix_double_res->height;
   } else {
     view_matrix = view_matrix_screen;
     view_left = -screen_width / 2;
-    view_right = screen_width / 2 - 1;
+    view_right = screen_width / 2 ;
     view_bottom = screen_height - 1;
     view_gap_size = config_grid_gap;
     view_pad_left_inner = -config_grid_gap;
     view_pad_right_inner = config_grid_gap;
+    view_width = view_matrix_screen->width;
+    view_height = view_matrix_screen->height;
   }
 }
 

@@ -39,6 +39,11 @@ void Matrix::set(int32_t x, int32_t y, CRGB color) {
 	}
 }
 
+void Matrix::set_absolute(int32_t x, int32_t y, CRGB color) {
+	if (Tools::in_bounds(x, y, this->width, this->height)) {
+		this->matrix2D[y][x] = color;
+	}
+}
 
 void Matrix::clear(CRGB color) {
 	for (int32_t y = 0; y < this->height; y++) {

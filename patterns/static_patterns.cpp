@@ -30,3 +30,14 @@ void StaticPatterns::vertical_gradient(Matrix* view_matrix, CRGB color_top, CRGB
 void StaticPatterns::horizontal_gradient_from_center(Matrix* view_matrix, CRGB color_inner, CRGB color_outer) {
 
 }
+
+void StaticPatterns::fifty_fifty(Matrix* view_matrix, CRGB color_left, CRGB color_right) {
+	for(int32_t y = 0; y < view_matrix->height; y++)
+		for(int32_t x = 0; x < view_matrix->width; x++) {
+			if (x < view_matrix->width / 2) {
+				view_matrix->set_absolute(x, y, color_left);
+			} else {
+				view_matrix->set_absolute(x, y, color_right);
+			}
+		}
+}

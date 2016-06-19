@@ -5,6 +5,7 @@
 #include "matrix.h"
 #include "tools.h"
 #include "point.h"
+#include "math.h"
 
 class Effects {
   public:

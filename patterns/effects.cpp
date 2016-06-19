@@ -9,14 +9,14 @@ void Effects::translate(Matrix* target, Matrix* sourceA, Point amount) {
 
 	for (int32_t y = 0; y < sourceA->height; y++) {
 		for (int32_t x = 0; x < sourceA->width; x++) {
-			placeholder->set(x, y, sourceA->get(x - amount.x, y - amount.y));
+			placeholder->set_absolute(x, y, sourceA->get_absolute(x - amount.x, y - amount.y));
 		}
 	}
 
 	if (target == sourceA) {
 		for (int32_t y = 0; y < placeholder->height; y++) {
 			for (int32_t x = 0; x < placeholder->width; x++) {
-				target->set(x, y, placeholder->get(x, y));
+				target->set_absolute(x, y, placeholder->get_absolute(x, y));
 			}
 		}
 		delete placeholder;
@@ -55,19 +55,19 @@ void Effects::blur(Matrix* target, Matrix* sourceA, int32_t dist[], int32_t dist
 
 	for (int32_t y = 0; y < sourceA->height; y++) {
 		for (int32_t x = 0; x < sourceA->width; x++) {
-			int32_t red = 0;
-			int32_t green = 0;
-			int32_t blue = 0;
+			uint32_t red = 0;
+			uint32_t green = 0;
+			uint32_t blue = 0;
 
 			for (int32_t bf_y = 0; bf_y < dist_len; bf_y++) {
 				for (int32_t bf_x = 0; bf_x < dist_len; bf_x++) {
-					int32_t real_y = y + (bf_y - 1);
-					int32_t real_x = x + (bf_x - 1);
+					int32_t real_y = y + (bf_y - dist_len / 2);
+					int32_t real_x = x + (bf_x - dist_len / 2);
 
 					if (Tools::in_bounds(real_x, real_y, sourceA->width, sourceA->height)) {
-						red += sourceA->get(real_x, real_y).r * box_filter[bf_y][bf_x];
-						green += sourceA->get(real_x, real_y).g * box_filter[bf_y][bf_x];
-						blue += sourceA->get(real_x, real_y).b * box_filter[bf_y][bf_x];
+						red += sourceA->get_absolute(real_x, real_y).r * box_filter[bf_y][bf_x];
+						green += sourceA->get_absolute(real_x, real_y).g * box_filter[bf_y][bf_x];
+						blue += sourceA->get_absolute(real_x, real_y).b * box_filter[bf_y][bf_x];
 					}
 				}
 			}
@@ -76,7 +76,7 @@ void Effects::blur(Matrix* target, Matrix* sourceA, int32_t dist[], int32_t dist
 			green /= divider;
 			blue /= divider;
 
-			placeholder->set(x, y, CRGB(red, green, blue));
+			placeholder->set_absolute(x, y, CRGB(red, green, blue));
 		}
 	}
 
@@ -88,7 +88,7 @@ void Effects::blur(Matrix* target, Matrix* sourceA, int32_t dist[], int32_t dist
 	if (target == sourceA) {
 		for (int32_t y = 0; y < placeholder->height; y++) {
 			for (int32_t x = 0; x < placeholder->width; x++) {
-				target->set(x, y, placeholder->get(x, y));
+				target->set_absolute(x, y, placeholder->get_absolute(x, y));
 			}
 		}
 		delete placeholder;
