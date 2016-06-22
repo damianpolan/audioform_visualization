@@ -6,9 +6,8 @@
 #include "effects.h"
 #include "tools.h"
 #include "static_patterns.h"
-
 #define NUM_LEDS 74
-#define BRIGHTNESS 100
+#define BRIGHTNESS 40
 
 #define PIN_LEFT 6
 #define PIN_RIGHT 8
@@ -64,6 +63,7 @@ int32_t blur_dist_5 [5] = { 10, 20, 40, 20, 10 };
 int32_t blur_dist_3_hard [3] = { 10, 80, 10 };
 int32_t blur_dist_3_soft [3] = { 20, 60, 20 };
 
+bool on = false;
 
 void setup() {
 	Serial.begin(9600);
@@ -86,79 +86,59 @@ void setup() {
   view_matrix_screen = new Matrix(screen_width, screen_height, Point(screen_width / 2, 0));
 
   set_view_matrix(false);
+
 }
 
 
+CRGB curr_transition_color;
+bool purple_haze(int32_t transition_counter, CRGB to_color) {
+  set_view_matrix(true);
+  FRAME_DELAY = 0;
 
-bool on = false;
+  CRGB purple_b = CRGB(70, 0, 70);
+  int32_t period = 35;
+
+  if (transition_counter > -1) {
+    period += 50;
+
+    curr_transition_color = Tools::step_color_towards(curr_transition_color, to_color, 4);
+    view_matrix->clear(curr_transition_color);
+    if (transition_counter > 50)
+      return true;
+  } else {
+    view_matrix->clear(purple_b);
+    curr_transition_color = purple_b;
+  }
+
+  Shapes::line(view_matrix, Point(screen_width * 2, 8), Point(0, counter % period - 8), CRGB::Blue);
+  Shapes::line(view_matrix, Point(screen_width * 2, 8 + 1), Point(0, counter % period - 8 + 1), CRGB::Blue);
+
+  Shapes::line(view_matrix, Point(screen_width * 2, 8), Point(0, (counter - 16) % period - 8), CRGB::Blue);
+  Shapes::line(view_matrix, Point(screen_width * 2, 8 + 1), Point(0, (counter - 16) % period - 8 + 1), CRGB::Blue);
+
+  Shapes::line(view_matrix, Point(-screen_width * 2, 8), Point(0, counter % period - 8), CRGB::Blue);
+  Shapes::line(view_matrix, Point(-screen_width * 2, 8 + 1), Point(0, counter % period - 8 + 1), CRGB::Blue);
+
+  Shapes::line(view_matrix, Point(-screen_width * 2, 8), Point(0, (counter - 16) % period - 8), CRGB::Blue);
+  Shapes::line(view_matrix, Point(-screen_width * 2, 8 + 1), Point(0, (counter - 16) % period - 8 + 1), CRGB::Blue);
+
+  Effects::blur(view_matrix, view_matrix, blur_dist_5, 5);
+
+  return false;
+}
+
+
 void update() {
+  int32_t transition_counter = -1;
+  if (counter > 100) {
+    transition_counter = counter - 100;
+  }
 
-  // view_matrix->clear(CRGB(0, 100, 0));
-  // Shapes::rectangle(view_matrix, Point(view_left, view_top), Point(view_right, view_bottom), CRGB::Green);
-  // Shapes::rectangle(view_matrix, Point(view_pad_left_inner, view_top), Point(view_pad_right_inner, view_bottom), CRGB::Green);
-
-
-  // FIFTY FIFTY
-  // StaticPatterns::fifty_fifty(view_matrix, CRGB::White, CRGB::Red);
- //  // StaticPatterns::fifty_fifty(view_matrix, CRGB(25, 158, 216), CRGB(7, 113, 184));
-
-
-  // #############################################################
-  // BLURRED Horizontal LINE
-  // view_matrix->clear(CRGB(0, 100, 100));
-  // Shapes::line(view_matrix, Point(view_left, view_bottom / 2 + 1), Point(view_right, view_bottom / 2 + 1), CRGB::White);
-  // Shapes::line(view_matrix, Point(view_left, view_bottom / 2), Point(view_right + 1, view_bottom / 2), CRGB::White);
-  // Effects::blur(view_matrix, view_matrix, blur_dist_5, 5);
-
-  
-  // #############################################################
-  // BLURRED Vertical lines
-  // view_matrix->clear(CRGB(0, 100, 100));
-  // Shapes::line(view_matrix, Point(view_left + 4, view_top), Point(view_left + 4, view_bottom), CRGB::White);
-  // Shapes::line(view_matrix, Point(view_left + 5, view_top), Point(view_left + 5, view_bottom), CRGB::White);
-  // Shapes::line(view_matrix, Point(view_right - 4, view_top), Point(view_right - 4, view_bottom), CRGB::White);
-  // Shapes::line(view_matrix, Point(view_right - 5, view_top), Point(view_right - 5, view_bottom), CRGB::White);
-  // Effects::blur(view_matrix, view_matrix, blur_dist_5, 5);
-
-  // #############################################################
-  // CROSS lines
-  view_matrix->clear(CRGB(0, 100, 100));
-  Shapes::line(view_matrix, Point(view_left + 4, view_top), Point(view_left + 4, view_bottom), CRGB::White);
-  Shapes::line(view_matrix, Point(view_left + 5, view_top), Point(view_left + 5, view_bottom), CRGB::White);
-  Shapes::line(view_matrix, Point(view_right - 4, view_top), Point(view_right - 4, view_bottom), CRGB::White);
-  Shapes::line(view_matrix, Point(view_right - 5, view_top), Point(view_right - 5, view_bottom), CRGB::White);
-  Shapes::line(view_matrix, Point(view_left, view_bottom / 2 + 1), Point(view_right, view_bottom / 2 + 1), CRGB::White);
-  Shapes::line(view_matrix, Point(view_left, view_bottom / 2), Point(view_right + 1, view_bottom / 2), CRGB::White);
-  // Effects::blur(view_matrix, view_matrix, blur_dist_5, 5);
-
-
-
-  //light blue
-  // CRGB(25, 158, 216), CRGB(7, 113, 184)
-
-  // if (on) {
-  //   view_matrix->clear(CRGB(100, 0, 0));
-  //   Shapes::rectangle(view_matrix, Point(-5, 2), Point(5, 5), CRGB::Blue);    
-  // }
-
-  // set_view_matrix(true);
-  // FRAME_DELAY = 0;
-  // view_matrix->clear(CRGB(50, 0, 50));
-  // Shapes::line(view_matrix, Point(screen_width * 2, 8), Point(0, counter % 50 - 8), CRGB::Blue);
-  // Shapes::line(view_matrix, Point(screen_width * 2, 8 + 1), Point(0, counter % 50 - 8 + 1), CRGB::Blue);
-
-  // Shapes::line(view_matrix, Point(screen_width * 2, 8), Point(0, counter % 50 - 16), CRGB::Blue);
-  // Shapes::line(view_matrix, Point(screen_width * 2, 8 + 1), Point(0, counter % 50 - 16 + 1), CRGB::Blue);
-
-  // Shapes::line(view_matrix, Point(-screen_width * 2, 8), Point(0, counter % 50 - 8), CRGB::Blue);
-  // Shapes::line(view_matrix, Point(-screen_width * 2, 8 + 1), Point(0, counter % 50 - 8 + 1), CRGB::Blue);
-
-  // Shapes::line(view_matrix, Point(-screen_width * 2, 8), Point(0, counter % 50 - 16), CRGB::Blue);
-  // Shapes::line(view_matrix, Point(-screen_width * 2, 8 + 1), Point(0, counter % 50 - 16 + 1), CRGB::Blue);
-
-  // Effects::blur(view_matrix, view_matrix, blur_dist_5, 5);
-
+  bool is_done = purple_haze(transition_counter, CRGB::Red);
+  if (is_done)
+    delay(1000000);
 }
+
 
 void draw() {
   if (use_double_view_matrix) 
@@ -175,7 +155,6 @@ void loop() {
 	draw();
 	delay(FRAME_DELAY);
 }
-
 
 
 void button_interrupt(){
