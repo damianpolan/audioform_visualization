@@ -6,8 +6,10 @@
 #include "effects.h"
 #include "tools.h"
 #include "static_patterns.h"
+#include <vector>
+
 #define NUM_LEDS 74
-#define BRIGHTNESS 40
+#define BRIGHTNESS 20
 
 #define PIN_LEFT 6
 #define PIN_RIGHT 8
@@ -98,16 +100,15 @@ bool purple_haze(int32_t transition_counter, CRGB to_color) {
   CRGB purple_b = CRGB(70, 0, 70);
   int32_t period = 35;
 
-  if (transition_counter > -1) {
+  if (transition_counter == -1) {
+    view_matrix->clear(purple_b);
+    curr_transition_color = purple_b;
+  } else {
     period += 50;
-
     curr_transition_color = Tools::step_color_towards(curr_transition_color, to_color, 4);
     view_matrix->clear(curr_transition_color);
     if (transition_counter > 50)
       return true;
-  } else {
-    view_matrix->clear(purple_b);
-    curr_transition_color = purple_b;
   }
 
   Shapes::line(view_matrix, Point(screen_width * 2, 8), Point(0, counter % period - 8), CRGB::Blue);
@@ -128,13 +129,46 @@ bool purple_haze(int32_t transition_counter, CRGB to_color) {
 }
 
 
+CHSV current_generation_color = CHSV(150, 255, 255);
+bool random_spots(int32_t transition_counter, CRGB to_color) {
+  set_view_matrix(false);
+  FRAME_DELAY = 70;
+  int32_t prob = 5;
+
+  if (transition_counter == -1) {
+    view_matrix->clear(CRGB::Black);
+    CHSV c_step;
+    c_step.set = CHSV(current_generation_color);
+    c_step.h += 1;
+    hsv2rgb_rainbow(c_step, current_generation_color);
+  } else {
+    prob *= 2;
+    current_generation_color = Tools::step_color_towards(current_generation_color, to_color, 8);
+    if(transition_counter > 60)
+      return true;
+  }
+
+  for (int32_t y = 0; y < view_matrix->height; y++) {
+    for (int32_t x = 0; x < view_matrix->width; x++) {
+      if(random(0, prob) <= 0) {
+        view_matrix->set_absolute(x, y, current_generation_color);
+      }
+    }
+  }
+
+  return false;
+}
+
 void update() {
   int32_t transition_counter = -1;
   if (counter > 100) {
     transition_counter = counter - 100;
   }
 
-  bool is_done = purple_haze(transition_counter, CRGB::Red);
+  bool is_done = false;
+
+  is_done = random_spots(transition_counter, CRGB::Red);
+
   if (is_done)
     delay(1000000);
 }
