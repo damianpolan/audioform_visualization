@@ -129,22 +129,25 @@ bool purple_haze(int32_t transition_counter, CRGB to_color) {
 }
 
 
-CHSV current_generation_color = CHSV(150, 255, 255);
+CRGB current_generation_color = CHSV(0, 255, 255);
 bool random_spots(int32_t transition_counter, CRGB to_color) {
   set_view_matrix(false);
   FRAME_DELAY = 70;
-  int32_t prob = 5;
+  int32_t prob = 4;
 
   if (transition_counter == -1) {
     view_matrix->clear(CRGB::Black);
-    CHSV c_step;
-    c_step.set = CHSV(current_generation_color);
-    c_step.h += 1;
-    hsv2rgb_rainbow(c_step, current_generation_color);
+
+    if (counter % 4 == 0) {
+      CHSV c_step;
+      c_step = rgb2hsv_approximate(current_generation_color);
+      c_step.h += 2;
+      hsv2rgb_rainbow(c_step, current_generation_color); 
+    }
   } else {
     prob *= 2;
     current_generation_color = Tools::step_color_towards(current_generation_color, to_color, 8);
-    if(transition_counter > 60)
+    if(transition_counter > 50)
       return true;
   }
 
@@ -159,18 +162,39 @@ bool random_spots(int32_t transition_counter, CRGB to_color) {
   return false;
 }
 
+bool canada_flag(int32_t transition_counter, CRGB to_color) {
+  return false;
+}
+
+int32_t current_pattern = 0;
+int32_t current_pattern_count = 2;
+int32_t switch_period = 100;
+int32_t max_trans_period = 100;
 void update() {
   int32_t transition_counter = -1;
-  if (counter > 100) {
-    transition_counter = counter - 100;
+  int32_t cycling_counter = counter % (switch_period + max_trans_period);
+  if (cycling_counter > switch_period) {
+    transition_counter = counter - switch_period;
   }
 
   bool is_done = false;
+  switch (current_pattern)
+  {
+     case 0:
+        is_done = random_spots(transition_counter, CRGB(70, 0, 70));
+        break;
+     case 1:
+        is_done = purple_haze(transition_counter, CRGB::Black);
+        break;
+  }
 
-  is_done = random_spots(transition_counter, CRGB::Red);
-
-  if (is_done)
-    delay(1000000);
+  if (is_done) {
+    counter = 0;
+    transition_counter = -1;
+    current_pattern++;
+    if (current_pattern >= current_pattern_count)
+      current_pattern = 0;
+  }
 }
 
 
