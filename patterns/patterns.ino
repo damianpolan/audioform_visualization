@@ -21,6 +21,7 @@ void display_double_size_view_matrix(Matrix* view_m);
 void display_view_matrix(Matrix* view_m);
 void set_view_matrix(bool use_double);
 void button_interrupt();
+void init_patterns();
 
 // LED CONFIGURATION
 int32_t config_grid_right_width = 11;
@@ -38,6 +39,21 @@ int32_t config_grid_right[8][11] = {
 	{ -1, -1, -1, 6, 5, 4, 3, 2, 1, 0, -1 }
 };
 
+
+int32_t config_grid_right_erin[8][14] = {
+  { -1, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, -1, -1, -1 },
+  { -1, 79, 78, 77, 76, 75, 74, 73, 72, 71, 70, 69, -1, -1 },
+  { 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, -1, -1 },
+  { 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 46, 45, 44, -1 },
+  { 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43 },
+  { -1, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, -1 },
+  { -1, -1, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, -1, -1 },
+  { -1, -1, -1, 7, 6, 5, 4, 3, 2, 1, 0, -1, -1, -1 } 
+};
+
+
+
+bool CAITLYNS_BRA = true;
 int32_t FRAME_DELAY = 40;
 int32_t screen_width; // real dimensions of the LED screen.
 int32_t screen_height;
@@ -76,8 +92,8 @@ void setup() {
   // pinMode(PIN_BUTTON, INPUT);
   // attachInterrupt(digitalPinToInterrupt(PIN_BUTTON), button_interrupt, FALLING );
 
-	FastLED.addLeds<NEOPIXEL, PIN_LEFT>(leds_left, NUM_LEDS).setCorrection( TypicalLEDStrip );
-	FastLED.addLeds<NEOPIXEL, PIN_RIGHT>(leds_right, NUM_LEDS).setCorrection( TypicalLEDStrip );
+	FastLED.addLeds<NEOPIXEL, PIN_LEFT>(leds_left, NUM_LEDS).setCorrection( CRGB(210, 240, 255) );
+	FastLED.addLeds<NEOPIXEL, PIN_RIGHT>(leds_right, NUM_LEDS).setCorrection( CRGB(210, 240, 255)   );
 	FastLED.setBrightness(BRIGHTNESS);
 
 	screen_width = (2 * config_grid_right_width) + config_grid_gap;
@@ -88,7 +104,7 @@ void setup() {
   view_matrix_screen = new Matrix(screen_width, screen_height, Point(screen_width / 2, 0));
 
   set_view_matrix(false);
-
+  init_patterns();
 }
 
 
@@ -147,7 +163,7 @@ bool random_spots(int32_t transition_counter, CRGB to_color) {
   } else {
     prob *= 2;
     current_generation_color = Tools::step_color_towards(current_generation_color, to_color, 8);
-    if(transition_counter > 50)
+    if(transition_counter > 35)
       return true;
   }
 
@@ -162,12 +178,88 @@ bool random_spots(int32_t transition_counter, CRGB to_color) {
   return false;
 }
 
-bool canada_flag(int32_t transition_counter, CRGB to_color) {
+Matrix* line_states;
+void init_patterns() {
+  delete line_states;
+  line_states = new Matrix(screen_width, screen_height);
+  line_states->clear(CRGB(0, 0, 0));
+}
+
+bool flying_lines(int32_t transition_counter, CRGB to_color, CRGB background_color) {
+  set_view_matrix(false);
+  FRAME_DELAY = 50;
+  int32_t prob = 7;
+
+  if (transition_counter != -1) {
+    prob = 3;
+
+    if (transition_counter > 34) {
+      return true;
+    }
+  }
+
+  view_matrix->clear(background_color);
+  for (int32_t y = 0; y < line_states->width; y++) {
+    if(random(0, prob) <= 0) {
+      line_states->set_absolute(0, y, CRGB(1, 0, 0));
+      line_states->set_absolute(screen_width - 1, y, CRGB(1, 0, 0));
+    }
+  }
+
+  for (int32_t y = 0; y < line_states->height; y++) {
+    for (int32_t x = line_states->width / 2 + 1; x < line_states->width; x++) {
+      if(line_states->get_absolute(x, y).r > 0) { // right pad
+          view_matrix->set_absolute(x, y, CRGB(0, 255, 100));
+          view_matrix->set_absolute(x + 1, y, CRGB(0, 255, 50));
+          view_matrix->set_absolute(x + 2, y, CRGB(0, 255, 0));
+
+          line_states->set_absolute(x, y, CRGB(0, 0, 0));
+
+          if (line_states->get_absolute(x - 1, y).g != 2) {
+            line_states->set_absolute(x - 1, y, CRGB(1, 0, 0));
+          }
+          if (transition_counter != -1) {
+            if (x == line_states->width / 2 + 1 || line_states->get_absolute(x - 1, y).g == 2) {
+              line_states->set_absolute(x, y, CRGB(0, 2, 0));
+            }
+          }
+      }
+      if (line_states->get_absolute(x, y).g == 2) {
+        view_matrix->set_absolute(x, y, to_color);
+      }
+    }
+  }
+
+  for (int32_t y = 0; y < line_states->height; y++) {
+    for (int32_t x = line_states->width / 2 - 1; x >= 0; x--) {
+      if(line_states->get_absolute(x, y).r > 0) { // left pad
+          view_matrix->set_absolute(x, y, CRGB(0, 255, 100));
+          view_matrix->set_absolute(x - 1, y, CRGB(0, 255, 50));
+          view_matrix->set_absolute(x - 2, y, CRGB(0, 255, 0));
+
+          line_states->set_absolute(x, y, CRGB(0, 0, 0));
+
+          if (line_states->get_absolute(x + 1, y).g != 2) {
+            line_states->set_absolute(x + 1, y, CRGB(1, 0, 0));
+          }
+          if (transition_counter != -1) {
+            if (x == line_states->width / 2 - 1 || line_states->get_absolute(x + 1, y).g == 2) {
+              line_states->set_absolute(x, y, CRGB(0, 2, 0));
+            }
+          }
+      }
+      if (line_states->get_absolute(x, y).g == 2) {
+        view_matrix->set_absolute(x, y, to_color);
+      }
+    }
+  }
+
+
   return false;
 }
 
 int32_t current_pattern = 0;
-int32_t current_pattern_count = 2;
+int32_t current_pattern_count = 3;
 int32_t switch_period = 100;
 int32_t max_trans_period = 100;
 void update() {
@@ -180,18 +272,22 @@ void update() {
   bool is_done = false;
   switch (current_pattern)
   {
-     case 0:
-        is_done = random_spots(transition_counter, CRGB(70, 0, 70));
-        break;
-     case 1:
-        is_done = purple_haze(transition_counter, CRGB::Black);
-        break;
+    case 0:
+      is_done = purple_haze(transition_counter, CRGB(60, 60, 60));
+      break;
+    case 1:
+      is_done = flying_lines(transition_counter, CRGB(0, 0, 0), CRGB(60, 60, 60));
+      break;
+    case 2:
+      is_done = random_spots(transition_counter, CRGB(70, 0, 70));
+      break;
   }
 
   if (is_done) {
     counter = 0;
     transition_counter = -1;
     current_pattern++;
+    init_patterns();
     if (current_pattern >= current_pattern_count)
       current_pattern = 0;
   }
@@ -245,17 +341,37 @@ void set_view_matrix(bool use_double) {
   }
 }
 
+CRGB caitlyn_correct(int32_t x, int32_t y, CRGB color) {
+  if (CAITLYNS_BRA
+    && ( (x > screen_width / 2 && y == 4) 
+    || (x < screen_width / 2 && y == 0))) {
+
+    int32_t red = color.r * 1;
+    int32_t green = color.g * 0.6f;
+    int32_t blue = color.b * 0.6f;
+
+    red = std::max((int) red, 0);
+    green = std::max((int) green, 0);
+    blue = std::max((int) blue, 0);
+
+    return CRGB(red, green, blue);
+  }
+  return color;
+}
+
 void set_led(int32_t x, int32_t y, CRGB color) {
   //zero point (x = 0) is in the middle of the bra gap 
   if (Tools::in_bounds(x, y, screen_width, screen_height)) {
     if (x < config_grid_right_width) {
       int32_t rel_x = config_grid_right_width - x - 1;
       int32_t pos = config_grid_right[y][rel_x];
+      color = caitlyn_correct(x, y, color);
       if (pos > -1) leds_left[pos] = color;
     }
     else if (x >= config_grid_right_width + config_grid_gap) {
       int32_t rel_x = x - (config_grid_right_width + config_grid_gap);
       int32_t pos = config_grid_right[y][rel_x];
+      color = caitlyn_correct(x, y, color);
       if (pos > -1) leds_right[pos] = color;
     }
   }
