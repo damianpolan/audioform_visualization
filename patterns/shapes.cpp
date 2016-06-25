@@ -115,6 +115,20 @@ void Shapes::rectangle(Matrix* target, Point p0, int32_t width, int32_t height, 
 }
 
 
-// void Shapes::poly(Matrix* target, Point p0, Point p1, Point p2, CRGB color) {
 
-// }
+
+void Shapes::poly(Matrix* target, Point* points, int32_t points_length, CRGB color) {
+	for (int32_t i = 0; i < points_length - 1; i++) {
+		Shapes::line(target, points[i], points[i + 1], color);
+	}
+	Shapes::line(target, points[0], points[points_length - 1], color);
+}
+
+void Shapes::fill_rectangle(Matrix* target, Point p0, Point p2, CRGB color) {
+	for (int32_t y = p0.y; y <= p2.y; y++) {
+		for (int32_t x = p0.x; x <= p2.x; x++) {
+			target->set(x, y, color);
+		}
+	}
+
+}

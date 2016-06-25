@@ -8,8 +8,7 @@
 #include "static_patterns.h"
 #include <vector>
 
-#define NUM_LEDS 74
-#define BRIGHTNESS 20
+#define BRIGHTNESS 40
 
 #define PIN_LEFT 6
 #define PIN_RIGHT 8
@@ -24,36 +23,26 @@ void button_interrupt();
 void init_patterns();
 
 // LED CONFIGURATION
-int32_t config_grid_right_width = 11;
+#define NUM_LEDS 90
+int32_t config_grid_right_width = 14;
 int32_t config_grid_right_height = 8;
-int32_t config_grid_num_leds = 74;
-int32_t config_grid_gap = 1;// must be odd
-int32_t config_grid_right[8][11] = {
-	{ -1, -1, 67, 68, 69, 70, 71, 72, 73, -1, -1 },
-	{ -1, 66, 65, 64, 63, 62, 61, 60, 59, 58, -1 },
-	{ 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, -1 },
-	{ 47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 37 },
-	{ 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36 },
-	{ -1, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16 },
-	{ -1, -1, 7, 8, 9, 10, 11, 12, 13, 14, 15 },
-	{ -1, -1, -1, 6, 5, 4, 3, 2, 1, 0, -1 }
-};
-
-
-int32_t config_grid_right_erin[8][14] = {
+int32_t config_grid_num_leds = 90;
+int32_t config_grid_gap = 1;
+int32_t config_grid_right[8][14] = {
   { -1, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, -1, -1, -1 },
   { -1, 79, 78, 77, 76, 75, 74, 73, 72, 71, 70, 69, -1, -1 },
   { 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, -1, -1 },
   { 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 46, 45, 44, -1 },
   { 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43 },
   { -1, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, -1 },
-  { -1, -1, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, -1, -1 },
-  { -1, -1, -1, 7, 6, 5, 4, 3, 2, 1, 0, -1, -1, -1 } 
+  { -1, -1,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, -1, -1 },
+  { -1, -1, -1,  7,  6,  5,  4,  3,  2,  1,  0, -1, -1, -1 } 
 };
 
 
 
-bool CAITLYNS_BRA = true;
+
+bool CAITLYNS_BRA = false;
 int32_t FRAME_DELAY = 40;
 int32_t screen_width; // real dimensions of the LED screen.
 int32_t screen_height;
@@ -92,8 +81,8 @@ void setup() {
   // pinMode(PIN_BUTTON, INPUT);
   // attachInterrupt(digitalPinToInterrupt(PIN_BUTTON), button_interrupt, FALLING );
 
-	FastLED.addLeds<NEOPIXEL, PIN_LEFT>(leds_left, NUM_LEDS).setCorrection( CRGB(210, 240, 255) );
-	FastLED.addLeds<NEOPIXEL, PIN_RIGHT>(leds_right, NUM_LEDS).setCorrection( CRGB(210, 240, 255)   );
+	FastLED.addLeds<NEOPIXEL, PIN_LEFT>(leds_left, NUM_LEDS).setCorrection( CRGB(220, 230, 255) );
+	FastLED.addLeds<NEOPIXEL, PIN_RIGHT>(leds_right, NUM_LEDS).setCorrection( CRGB(220, 230, 255)   );
 	FastLED.setBrightness(BRIGHTNESS);
 
 	screen_width = (2 * config_grid_right_width) + config_grid_gap;
@@ -109,35 +98,42 @@ void setup() {
 
 
 CRGB curr_transition_color;
+CRGB curr_blueline_color = CRGB::Blue;
 bool purple_haze(int32_t transition_counter, CRGB to_color) {
-  set_view_matrix(true);
+  set_view_matrix(false);
   FRAME_DELAY = 0;
 
   CRGB purple_b = CRGB(70, 0, 70);
-  int32_t period = 35;
+  int32_t period = 20;
 
   if (transition_counter == -1) {
     view_matrix->clear(purple_b);
     curr_transition_color = purple_b;
   } else {
-    period += 50;
-    curr_transition_color = Tools::step_color_towards(curr_transition_color, to_color, 4);
+    if (transition_counter > 30)
+      curr_blueline_color = Tools::step_color_towards(curr_blueline_color, to_color, 3);
+    
+    if (transition_counter % 1 == 0)
+      curr_transition_color = Tools::step_color_towards(curr_transition_color, to_color, 1);
     view_matrix->clear(curr_transition_color);
-    if (transition_counter > 50)
+    if (transition_counter > 80)
       return true;
   }
 
-  Shapes::line(view_matrix, Point(screen_width * 2, 8), Point(0, counter % period - 8), CRGB::Blue);
-  Shapes::line(view_matrix, Point(screen_width * 2, 8 + 1), Point(0, counter % period - 8 + 1), CRGB::Blue);
 
-  Shapes::line(view_matrix, Point(screen_width * 2, 8), Point(0, (counter - 16) % period - 8), CRGB::Blue);
-  Shapes::line(view_matrix, Point(screen_width * 2, 8 + 1), Point(0, (counter - 16) % period - 8 + 1), CRGB::Blue);
+  int32_t half_counter = counter / 2;
 
-  Shapes::line(view_matrix, Point(-screen_width * 2, 8), Point(0, counter % period - 8), CRGB::Blue);
-  Shapes::line(view_matrix, Point(-screen_width * 2, 8 + 1), Point(0, counter % period - 8 + 1), CRGB::Blue);
+  Shapes::line(view_matrix, Point(screen_width * 2, 8), Point(0, half_counter % period - 5), curr_blueline_color);
+  Shapes::line(view_matrix, Point(screen_width * 2, 8 + 1), Point(0, half_counter % period - 5 + 1), curr_blueline_color);
 
-  Shapes::line(view_matrix, Point(-screen_width * 2, 8), Point(0, (counter - 16) % period - 8), CRGB::Blue);
-  Shapes::line(view_matrix, Point(-screen_width * 2, 8 + 1), Point(0, (counter - 16) % period - 8 + 1), CRGB::Blue);
+  Shapes::line(view_matrix, Point(screen_width * 2, 8), Point(0, (half_counter - 8) % period - 5), curr_blueline_color);
+  Shapes::line(view_matrix, Point(screen_width * 2, 8 + 1), Point(0, (half_counter - 8) % period - 5 + 1), curr_blueline_color);
+
+  Shapes::line(view_matrix, Point(-screen_width * 2, 8), Point(0, half_counter % period - 5), curr_blueline_color);
+  Shapes::line(view_matrix, Point(-screen_width * 2, 8 + 1), Point(0, half_counter % period - 5 + 1), curr_blueline_color);
+
+  Shapes::line(view_matrix, Point(-screen_width * 2, 8), Point(0, (half_counter - 8) % period - 5), curr_blueline_color);
+  Shapes::line(view_matrix, Point(-screen_width * 2, 8 + 1), Point(0, (half_counter - 8) % period - 8 + 1), curr_blueline_color);
 
   Effects::blur(view_matrix, view_matrix, blur_dist_5, 5);
 
@@ -149,7 +145,7 @@ CRGB current_generation_color = CHSV(0, 255, 255);
 bool random_spots(int32_t transition_counter, CRGB to_color) {
   set_view_matrix(false);
   FRAME_DELAY = 70;
-  int32_t prob = 4;
+  int32_t prob = 3;
 
   if (transition_counter == -1) {
     view_matrix->clear(CRGB::Black);
@@ -163,7 +159,7 @@ bool random_spots(int32_t transition_counter, CRGB to_color) {
   } else {
     prob *= 2;
     current_generation_color = Tools::step_color_towards(current_generation_color, to_color, 8);
-    if(transition_counter > 35)
+    if(transition_counter > 40)
       return true;
   }
 
@@ -183,6 +179,31 @@ void init_patterns() {
   delete line_states;
   line_states = new Matrix(screen_width, screen_height);
   line_states->clear(CRGB(0, 0, 0));
+
+  curr_blueline_color = CRGB::Blue;
+
+  // int32_t left_middle_r = view_pad_left_inner - pad_size / 3 + 1;
+  // int32_t left_middle_l = view_left + pad_size / 3 - 1;
+  // int32_t right_middle_r = view_right - pad_size / 3 + 1;
+  // int32_t right_middle_l = view_pad_right_inner + pad_size / 3 - 1;
+
+  // vert_pos_left_l.left = view_left;
+  // vert_pos_left_l.right = left_middle_l;
+
+  // vert_pos_left_m.left = left_middle_l + 1;
+  // vert_pos_left_m.right = left_middle_R - 1;
+
+  // vert_pos_left_R.left = left_middle_R;
+  // vert_pos_left_R.right = view_pad_left_inner;
+
+  // vert_pos_right_l.left = view_pad_right_inner;
+  // vert_pos_right_l.right = right_middle_l;
+
+  // vert_pos_right_m.left = right_middle_l;
+  // vert_pos_right_m.right = right_middle_r;
+
+  // vert_pos_right_R.left = right_middle_r;
+  // vert_pos_right_R.right = view_right;
 }
 
 bool flying_lines(int32_t transition_counter, CRGB to_color, CRGB background_color) {
@@ -193,7 +214,7 @@ bool flying_lines(int32_t transition_counter, CRGB to_color, CRGB background_col
   if (transition_counter != -1) {
     prob = 3;
 
-    if (transition_counter > 34) {
+    if (transition_counter > 40) {
       return true;
     }
   }
@@ -258,10 +279,105 @@ bool flying_lines(int32_t transition_counter, CRGB to_color, CRGB background_col
   return false;
 }
 
+
+typedef struct {
+  int32_t left = 0;
+  int32_t right = 0;
+  int32_t top = 0;
+  int32_t state = 0;
+  CRGB color = CRGB(0, 0, 0);
+} CBox;
+CBox vert_pos_left_l;
+CBox vert_pos_left_m;
+CBox vert_pos_left_R;
+CBox vert_pos_right_l;
+CBox vert_pos_right_m;
+CBox vert_pos_right_R;
+
+bool canada_flag(int32_t transition_counter, CRGB to_color) {
+  set_view_matrix(false);
+  int32_t prob = 10;
+
+  view_matrix->clear(CRGB::White);
+
+  int32_t pad_size = view_pad_left_inner - view_left;
+
+  int32_t left_middle_r = view_pad_left_inner - pad_size / 3 + 1;
+  int32_t left_middle_l = view_left + pad_size / 3 - 1;
+
+  int32_t right_middle_r = view_right - pad_size / 3 + 1;
+  int32_t right_middle_l = view_pad_right_inner + pad_size / 3 - 1;
+
+  Shapes::fill_rectangle(view_matrix, Point(view_left, view_top), Point(left_middle_l, view_bottom), CRGB::Red);
+  Shapes::fill_rectangle(view_matrix, Point(left_middle_r, view_top), Point(view_pad_left_inner, view_bottom), CRGB::Red);
+
+  Shapes::fill_rectangle(view_matrix, Point(view_pad_left_inner, view_top), Point(right_middle_l, view_bottom), CRGB::Red);
+  Shapes::fill_rectangle(view_matrix, Point(right_middle_r, view_top), Point(view_right, view_bottom), CRGB::Red);
+
+  if (random(prob) <= 1) {
+
+  }
+
+  return false;
+}
+
+
+
+bool gradient_color_change(int32_t transition_counter, CRGB to_color) {
+  set_view_matrix(false);
+
+  for (int32_t y = 0; y < view_matrix->height; y++) {
+    for (int32_t x = 0; x < view_matrix->width; x++) {
+
+
+
+      CRGB color_n;
+
+      if (counter < 50) {
+        color_n = CHSV(((counter * 5) % 255) + x + y * 5, counter * 4, counter * 4);
+      } else
+        color_n = CHSV(((counter * 5) % 255) + x + y * 5, 200, 200);
+
+
+      if (transition_counter != -1) {
+        color_n = Tools::step_color_towards(color_n, to_color, transition_counter);
+      }
+
+      view_matrix->set_absolute(x, y, color_n);
+      
+    }
+  }
+
+  if (transition_counter > 50)
+  {
+    return true;
+  }
+
+  return false;
+}
+
+
+
+bool tan_function(int32_t transition_counter, CRGB to_color) {
+  for (int32_t y = 0; y < view_matrix->height; y++) {
+    for (int32_t x = 0; x < view_matrix->width; x++) {
+      CRGB color_n = CHSV( sin( ((float) counter) / 10) * 100, 200, 200);
+    }
+  }
+
+  return false;
+}
+
+
+
+
+
+
 int32_t current_pattern = 0;
-int32_t current_pattern_count = 3;
+int32_t current_pattern_count = 5;
 int32_t switch_period = 100;
 int32_t max_trans_period = 100;
+
 void update() {
   int32_t transition_counter = -1;
   int32_t cycling_counter = counter % (switch_period + max_trans_period);
@@ -273,13 +389,19 @@ void update() {
   switch (current_pattern)
   {
     case 0:
-      is_done = purple_haze(transition_counter, CRGB(60, 60, 60));
+      is_done = tan_function(transition_counter, CRGB(10, 10, 10));
       break;
     case 1:
-      is_done = flying_lines(transition_counter, CRGB(0, 0, 0), CRGB(60, 60, 60));
+      is_done = gradient_color_change(transition_counter, CRGB(70, 0, 70));
       break;
     case 2:
-      is_done = random_spots(transition_counter, CRGB(70, 0, 70));
+      is_done = purple_haze(transition_counter, CRGB(60, 60, 60));
+      break;
+    case 3:
+      is_done = flying_lines(transition_counter, CRGB(0, 0, 0), CRGB(60, 60, 60));
+      break;
+    case 4:
+      is_done = random_spots(transition_counter, CRGB::White);
       break;
   }
 
@@ -294,20 +416,42 @@ void update() {
 }
 
 
+
 void draw() {
   if (use_double_view_matrix) 
     display_double_size_view_matrix(view_matrix_double_res);
   else 
     display_view_matrix(view_matrix_screen);
   
-	FastLED.show();
+  FastLED.show();    
   counter++;
 }
+void clear_now() {
+  FastLED.clear();
+  FastLED.show();
+}
 
+int32_t Frame_Delay_timer = 50;
+
+bool strobe = false;
+int32_t strobe_millis_on = 5;
+int32_t strobe_millis_off = 50;
+unsigned long time_update_start;
+unsigned long time_draw_start;
 void loop() {
+  time_update_start = millis();
 	update();
-	draw();
-	delay(FRAME_DELAY);
+  
+  if (strobe) while(millis() - time_update_start < strobe_millis_off); 
+  else while(millis() - time_update_start < Frame_Delay_timer); 
+  
+  time_draw_start = millis();
+  draw();  
+
+  if (strobe) {
+    while(millis() - time_draw_start < strobe_millis_on);
+    clear_now(); 
+  }
 }
 
 
